@@ -1,0 +1,26 @@
+# IntelliJ
+.idea/
+*.iml
+out/
+
+# Spring Boot / Gradle
+backend/.gradle/
+backend/build/
+backend/bin/
+
+# Python
+vision/.venv/
+vision/__pycache__/
+vision/*.pyc
+vision/.pytest_cache/
+
+# YOLO 모델 파일
+vision/*.pt
+
+# 환경변수
+.env
+*.env
+
+# 운영체제
+.DS_Store
+Thumbs.db
