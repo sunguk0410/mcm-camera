@@ -9,7 +9,7 @@ class BackendClient:
     def __init__(
         self,
         base_url: str = "http://localhost:8080",
-        timeout: float = 3.0,
+        timeout: float = 5.0,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -35,6 +35,7 @@ class BackendClient:
         self,
         customer_session_id: int,
         product_id: str,
+        interaction_type: str = "PICKED_UP",
     ) -> None:
         response = requests.post(
             (
@@ -43,7 +44,7 @@ class BackendClient:
             ),
             json={
                 "productId": product_id,
-                "interactionType": "PICKED_UP",
+                "interactionType": interaction_type,
             },
             timeout=self.timeout,
         )
