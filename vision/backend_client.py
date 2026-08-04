@@ -29,6 +29,7 @@ class BackendClient:
         )
 
         response.raise_for_status()
+
         return response.json()
 
     def add_interaction(
@@ -39,12 +40,16 @@ class BackendClient:
     ) -> None:
         response = requests.post(
             (
-                f"{self.base_url}/api/customer-sessions/"
-                f"{customer_session_id}/interactions"
+                f"{self.base_url}"
+                f"/api/customer-sessions/"
+                f"{customer_session_id}"
+                f"/interactions"
             ),
             json={
                 "productId": product_id,
-                "interactionType": interaction_type,
+                "interactionType": (
+                    interaction_type
+                ),
             },
             timeout=self.timeout,
         )
