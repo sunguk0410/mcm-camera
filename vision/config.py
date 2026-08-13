@@ -3,6 +3,9 @@
 CAMERA_ID = "CAMERA_01"
 CAMERA_INDEX = 0
 
+# Zone interaction API에 전송할 매장 층 코드
+FLOOR_CODE = "string"
+
 # YOLO Pose 모델
 MODEL_NAME = "yolo26n-pose.pt"
 

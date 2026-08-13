@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from time import monotonic
 
 import cv2
@@ -12,6 +13,7 @@ import requests
 from backend_client import BackendClient
 from config import (
     CALIBRATION_DELAY_SECONDS,
+    FLOOR_CODE,
     PICKUP_CONFIRM_SECONDS,
     PICKUP_COOLDOWN_SECONDS,
     PRODUCT_ZONE_RATIOS,
@@ -278,12 +280,19 @@ class PickupDetector:
             return
 
         try:
-            self.backend.add_interaction(
+            exited_at = datetime.now(timezone.utc)
+            entered_at = exited_at - timedelta(
+                seconds=changed_duration
+            )
+
+            self.backend.add_zone_interaction(
                 customer_session_id=(
                     state.candidate_session_id
                 ),
-                product_id=product_id,
-                interaction_type="PICKED_UP",
+                floor_code=FLOOR_CODE,
+                category_code=product_id,
+                entered_at=entered_at,
+                exited_at=exited_at,
             )
 
             state.picked_up = True
