@@ -24,9 +24,9 @@ ZONE_RATIOS = {
 # Set real floor/category codes used by the Spring server.
 ZONE_METADATA = {
     "ZONE_1": ("1F", "BAG"),
-    "ZONE_2": ("1F", "WOMEN"),
-    "ZONE_3": ("2F", "MEN"),
-    "ZONE_4": ("2F", "ACCESSORY"),
+    "ZONE_2": ("1F", "BAG"),
+    "ZONE_3": ("2F", "BAG"),
+    "ZONE_4": ("2F", "ACCESSORIES"),
 }
 
 AR_ZONE_RATIO = (0.62, 0.20, 0.96, 0.88)
