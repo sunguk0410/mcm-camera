@@ -11,7 +11,7 @@ import requests
 from backend_client import BackendClient
 from config import (
     AR_DWELL_SECONDS,
-    AR_SESSION_ID,
+    AR_SESSION_LOOKUP_RETRY_SECONDS,
     AR_ZONE_RATIO,
     PERSON_EXIT_GRACE_SECONDS,
     ZONE_METADATA,
@@ -26,6 +26,7 @@ class VisitState:
     current_zone: str | None = None
     zone_entered_at: datetime | None = None
     ar_entered_at: float | None = None
+    ar_lookup_attempted_at: float | None = None
     ar_mapped: bool = False
 
 
@@ -121,18 +122,26 @@ class SpatialInteractionTracker:
             return
         if not self._inside(point, self._box(frame, AR_ZONE_RATIO)):
             visit.ar_entered_at = None
+            visit.ar_lookup_attempted_at = None
             return
         if visit.ar_entered_at is None:
             visit.ar_entered_at = now
             return
-        if now - visit.ar_entered_at < AR_DWELL_SECONDS or AR_SESSION_ID is None:
+        if now - visit.ar_entered_at < AR_DWELL_SECONDS:
             return
+        if (
+            visit.ar_lookup_attempted_at is not None
+            and now - visit.ar_lookup_attempted_at < AR_SESSION_LOOKUP_RETRY_SECONDS
+        ):
+            return
+        visit.ar_lookup_attempted_at = now
         try:
-            self.backend.map_ar_session(AR_SESSION_ID, visit.customer_session_id)
+            ar_session_id = self.backend.get_latest_active_ar_session_id()
+            self.backend.map_ar_session(ar_session_id, visit.customer_session_id)
             visit.ar_mapped = True
-            print(f"ARSession {AR_SESSION_ID} mapped to CustomerSession {visit.customer_session_id}")
-        except requests.RequestException as error:
-            print(f"ARSession mapping failed: {error}")
+            print(f"ARSession {ar_session_id} mapped to CustomerSession {visit.customer_session_id}")
+        except (requests.RequestException, KeyError, TypeError, ValueError) as error:
+            print(f"Active ARSession lookup or mapping failed: {error}")
 
     @staticmethod
     def _find_person_ground_point(frame: np.ndarray, result) -> tuple[int, int] | None:
@@ -162,8 +171,6 @@ class SpatialInteractionTracker:
             label += " [MAPPED]"
         elif self.visit and self.visit.ar_entered_at is not None:
             label += f" [{min(AR_DWELL_SECONDS, now - self.visit.ar_entered_at):.1f}/{AR_DWELL_SECONDS:.0f}s]"
-        elif AR_SESSION_ID is None:
-            label += " [SET MCM_AR_SESSION_ID]"
         cv2.putText(output, label, (x1 + 5, y1 + 22), cv2.FONT_HERSHEY_SIMPLEX, .5, (255, 0, 255), 2)
         if point is not None:
             cv2.circle(output, point, 8, (0, 0, 255), -1)

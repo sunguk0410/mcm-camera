@@ -31,8 +31,4 @@ ZONE_METADATA = {
 
 AR_ZONE_RATIO = (0.62, 0.20, 0.96, 0.88)
 AR_DWELL_SECONDS = 3.0
-
-# The AR display creates this session and supplies its ID to the camera process.
-# Example (PowerShell): $env:MCM_AR_SESSION_ID='123'; python main.py
-_ar_session_id = os.getenv("MCM_AR_SESSION_ID")
-AR_SESSION_ID = int(_ar_session_id) if _ar_session_id else None
+AR_SESSION_LOOKUP_RETRY_SECONDS = 1.0

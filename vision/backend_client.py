@@ -59,6 +59,14 @@ class BackendClient:
         )
         response.raise_for_status()
 
+    def get_latest_active_ar_session_id(self) -> int:
+        response = requests.get(
+            f"{self.base_url}/api/ar-sessions/active/latest",
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+        return int(response.json()["arSessionId"])
+
     @staticmethod
     def _format_datetime(value: datetime) -> str:
         # Spring DTO uses LocalDateTime, so no UTC suffix/offset is sent.

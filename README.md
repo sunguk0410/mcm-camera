@@ -11,14 +11,13 @@
 
 실행 전에 [vision/config.py](vision/config.py)의 `ZONE_RATIOS`와 `ZONE_METADATA`를 실제 바닥 배치와 서버 코드에 맞게 수정하세요. 좌표는 `(left, top, right, bottom)`이며 화면 크기에 대한 0~1 비율입니다.
 
-AR 화면이 만든 ARSession ID는 환경변수로 전달합니다.
+카메라는 AR 피팅 존에 3초 이상 머물면 서버에서 최신 활성 ARSession을 조회한 뒤 현재 CustomerSession과 연결합니다. Spring 서버에는 `GET /api/ar-sessions/active/latest`가 있어야 합니다.
 
 ```powershell
-$env:MCM_AR_SESSION_ID='123'
 $env:MCM_BACKEND_URL='https://api.mcm-showcase.com'
 ```
 
-ARSession ID가 없으면 사람과 존 추적은 계속하지만 AR 연결 요청만 보내지 않습니다.
+활성 ARSession이 없거나 요청이 실패하면 1초 간격으로 다시 조회합니다.
 
 ## 실행
 

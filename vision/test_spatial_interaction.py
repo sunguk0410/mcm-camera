@@ -21,6 +21,8 @@ class FakeBackend:
         self.ended = []
         self.interactions = []
         self.mappings = []
+        self.ar_session_ids = [99]
+        self.ar_lookups = 0
 
     def create_customer_session(self):
         self.created += 1
@@ -34,6 +36,10 @@ class FakeBackend:
 
     def map_ar_session(self, *args):
         self.mappings.append(args)
+
+    def get_latest_active_ar_session_id(self):
+        self.ar_lookups += 1
+        return self.ar_session_ids.pop(0)
 
 
 class FakeBoxes:
@@ -85,12 +91,12 @@ class SpatialInteractionTest(unittest.TestCase):
         self.assertEqual(1, len(self.backend.interactions))
         self.assertEqual((42, "1F", "BAG"), self.backend.interactions[0][:3])
 
-    @patch("spatial_interaction.AR_SESSION_ID", 99)
     @patch("spatial_interaction.monotonic", side_effect=[0.0, 3.1])
     def test_maps_ar_session_after_three_seconds(self, _clock):
         self.update(800, 500)
         self.update(800, 500)
 
+        self.assertEqual(1, self.backend.ar_lookups)
         self.assertEqual([(99, 42)], self.backend.mappings)
 
 
