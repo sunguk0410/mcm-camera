@@ -153,7 +153,11 @@ class SpatialInteractionTracker:
         for x1, y1, x2, y2 in boxes.xyxy.cpu().tolist():
             area = max(0.0, (x2 - x1) * (y2 - y1))
             if area >= width * height * 0.02:
-                candidates.append((area, (int((x1 + x2) / 2), int(y2))))
+                # With a ceiling-mounted, top-down camera, the bounding-box
+                # center is a better floor-position estimate than its bottom.
+                candidates.append(
+                    (area, (int((x1 + x2) / 2), int((y1 + y2) / 2)))
+                )
         return max(candidates, default=(0, None), key=lambda item: item[0])[1]
 
     def _draw_layout(self, frame: np.ndarray, output: np.ndarray, point, now: float) -> None:
