@@ -1,52 +1,38 @@
-# config.py
+import os
 
-CAMERA_ID = "CAMERA_01"
-CAMERA_INDEX = 0
 
-# Zone interaction API에 전송할 매장 층 코드
-FLOOR_CODE = "string"
-
-# YOLO Pose 모델
-MODEL_NAME = "yolo26n-pose.pt"
-
-# 사람 탐지 신뢰도
+CAMERA_INDEX = int(os.getenv("MCM_CAMERA_INDEX", "0"))
+BACKEND_BASE_URL = os.getenv("MCM_BACKEND_URL", "https://api.mcm-showcase.com")
+MODEL_NAME = os.getenv("MCM_MODEL_NAME", "yolo26n-pose.pt")
 PERSON_CONFIDENCE = 0.60
+MIN_PERSON_AREA_RATIO = 0.02
 
-# 화면 전체 대비 너무 작은 사람은 무시
-MIN_PERSON_AREA_RATIO = 0.05
+# A person is considered to have left after being absent this long. This avoids
+# ending a visit because of a few missed detection frames.
+PERSON_EXIT_GRACE_SECONDS = 2.0
 
-# 사람이 사라져도 기존 고객으로 기억할 시간
-SESSION_TTL_SECONDS = 5 * 60
-
-# 옷 색상 유사도
-# 값이 높을수록 더 비슷해야 같은 사람으로 판단
-APPEARANCE_MATCH_THRESHOLD = 0.60
-
-# 프로그램 시작 후 제품 기준 화면 저장까지 대기
-CALIBRATION_DELAY_SECONDS = 3.0
-
-# 제품 구역 변화 기준
-ZONE_CHANGE_THRESHOLD = 22.0
-
-# 변화가 일정 시간 지속돼야 실제 집기로 판단
-PICKUP_CONFIRM_SECONDS = 0.8
-
-# 같은 제품의 중복 저장 방지 시간
-PICKUP_COOLDOWN_SECONDS = 10.0
-
-# 가방이 다시 원래 위치로 돌아왔다고 판단하는 기준
-ZONE_RESTORE_THRESHOLD = 12.0
-
-# 복귀 상태 유지 시간
-ZONE_RESTORE_SECONDS = 1.0
-
-# 제품 진열 구역
-#
-# 형식:
-# (왼쪽 비율, 위쪽 비율, 오른쪽 비율, 아래쪽 비율)
-#
-# 실제 카메라 화면에 맞게 수정해야 함
-PRODUCT_ZONE_RATIOS = {
-    "BAG_A": (0.03, 0.25, 0.35, 0.90),
-    "BAG_B": (0.65, 0.25, 0.97, 0.90),
+# Demo layout, expressed as (left, top, right, bottom) ratios of the image.
+# The left half contains one square split into four zones. Adjust these values
+# after mounting the camera if the floor markings do not align with the overlay.
+ZONE_RATIOS = {
+    "ZONE_1": (0.04, 0.18, 0.24, 0.50),
+    "ZONE_2": (0.24, 0.18, 0.44, 0.50),
+    "ZONE_3": (0.04, 0.50, 0.24, 0.82),
+    "ZONE_4": (0.24, 0.50, 0.44, 0.82),
 }
+
+# Set real floor/category codes used by the Spring server.
+ZONE_METADATA = {
+    "ZONE_1": ("1F", "BAG"),
+    "ZONE_2": ("1F", "WOMEN"),
+    "ZONE_3": ("2F", "MEN"),
+    "ZONE_4": ("2F", "ACCESSORY"),
+}
+
+AR_ZONE_RATIO = (0.62, 0.20, 0.96, 0.88)
+AR_DWELL_SECONDS = 3.0
+
+# The AR display creates this session and supplies its ID to the camera process.
+# Example (PowerShell): $env:MCM_AR_SESSION_ID='123'; python main.py
+_ar_session_id = os.getenv("MCM_AR_SESSION_ID")
+AR_SESSION_ID = int(_ar_session_id) if _ar_session_id else None

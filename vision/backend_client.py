@@ -7,31 +7,24 @@ import requests
 
 
 class BackendClient:
-    def __init__(
-        self,
-        base_url: str = "https://api.mcm-showcase.com",
-        timeout: float = 5.0,
-    ) -> None:
+    def __init__(self, base_url: str, timeout: float = 5.0) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
-    def create_or_get_session(
-        self,
-        camera_id: str,
-        track_id: int,
-    ) -> dict[str, Any]:
+    def create_customer_session(self) -> dict[str, Any]:
         response = requests.post(
             f"{self.base_url}/api/customer-sessions",
-            json={
-                "cameraId": camera_id,
-                "trackId": track_id,
-            },
             timeout=self.timeout,
         )
-
         response.raise_for_status()
-
         return response.json()
+
+    def end_customer_session(self, customer_session_id: int) -> None:
+        response = requests.patch(
+            f"{self.base_url}/api/customer-sessions/{customer_session_id}/end",
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
 
     def add_zone_interaction(
         self,
@@ -52,12 +45,21 @@ class BackendClient:
             },
             timeout=self.timeout,
         )
+        response.raise_for_status()
 
+    def map_ar_session(
+        self,
+        ar_session_id: int,
+        customer_session_id: int,
+    ) -> None:
+        response = requests.patch(
+            f"{self.base_url}/api/ar-sessions/{ar_session_id}/customer-session",
+            json={"customerSessionId": customer_session_id},
+            timeout=self.timeout,
+        )
         response.raise_for_status()
 
     @staticmethod
     def _format_datetime(value: datetime) -> str:
-        return value.isoformat(timespec="milliseconds").replace(
-            "+00:00",
-            "Z",
-        )
+        # Spring DTO uses LocalDateTime, so no UTC suffix/offset is sent.
+        return value.astimezone().replace(tzinfo=None).isoformat(timespec="milliseconds")

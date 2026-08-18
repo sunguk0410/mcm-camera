@@ -7,12 +7,12 @@ from ultralytics import YOLO
 
 from backend_client import BackendClient
 from config import (
+    BACKEND_BASE_URL,
     CAMERA_INDEX,
     MODEL_NAME,
     PERSON_CONFIDENCE,
 )
-from customer_tracker import CustomerTracker
-from pickup_detector import PickupDetector
+from spatial_interaction import SpatialInteractionTracker
 
 
 def open_camera() -> cv2.VideoCapture:
@@ -41,15 +41,8 @@ def open_camera() -> cv2.VideoCapture:
 def main() -> None:
     model = YOLO(MODEL_NAME)
 
-    backend = BackendClient()
-
-    customer_tracker = CustomerTracker(
-        backend=backend
-    )
-
-    pickup_detector = PickupDetector(
-        backend=backend
-    )
+    backend = BackendClient(BACKEND_BASE_URL)
+    interaction_tracker = SpatialInteractionTracker(backend)
 
     camera = open_camera()
 
@@ -77,36 +70,10 @@ def main() -> None:
             # YOLO 탐지 결과가 그려진 화면
             output_frame = result.plot()
 
-            tracking_output = (
-                customer_tracker.update(
-                    frame=frame,
-                    result=result,
-                )
-            )
-
-            customer_tracker.draw_customer_labels(
-                frame=output_frame,
-                result=result,
-            )
-
-            customer_tracker.draw_wrists(
-                frame=output_frame,
-                track_wrists=(
-                    tracking_output.track_wrists
-                ),
-            )
-
-            pickup_detector.update(
+            interaction_tracker.update(
                 frame=frame,
                 output_frame=output_frame,
-                track_to_customer=(
-                    tracking_output
-                    .track_to_customer
-                ),
-                track_wrists=(
-                    tracking_output
-                    .track_wrists
-                ),
+                result=result,
             )
 
             cv2.imshow(
@@ -122,12 +89,8 @@ def main() -> None:
             if key == ord("q"):
                 break
 
-            if key == ord("c"):
-                pickup_detector.calibrate(
-                    frame
-                )
-
     finally:
+        interaction_tracker.close()
         camera.release()
         cv2.destroyAllWindows()
 
