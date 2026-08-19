@@ -27,11 +27,14 @@ class VisitState:
     zone_entered_at: datetime | None = None
     ar_entered_at: float | None = None
     ar_lookup_attempted_at: float | None = None
+    ar_waiting_logged: bool = False
     ar_mapped: bool = False
 
 
 class SpatialInteractionTracker:
     """Single-person demo state machine using the person's ground point."""
+
+    LOG_SEPARATOR = "-" * 50
 
     def __init__(self, backend: BackendClient) -> None:
         self.backend = backend
@@ -94,7 +97,14 @@ class SpatialInteractionTracker:
         if next_zone is not None:
             visit.current_zone = next_zone
             visit.zone_entered_at = at
-            print(f"Entered {next_zone}")
+            floor_code, category_code = ZONE_METADATA[next_zone]
+            print(
+                "Zone entered\n"
+                f"floorCode: {floor_code}\n"
+                f"categoryCode: {category_code}\n"
+                f"enteredAt: {at.isoformat()}\n"
+                f"{self.LOG_SEPARATOR}"
+            )
 
     def _leave_zone(self, visit: VisitState, exited_at: datetime) -> None:
         if visit.current_zone is None or visit.zone_entered_at is None:
@@ -109,9 +119,24 @@ class SpatialInteractionTracker:
                 visit.zone_entered_at,
                 exited_at,
             )
-            print(f"ZoneInteraction sent: {zone}")
+            print(
+                "ZoneInteraction sent\n"
+                f"floorCode: {floor_code}\n"
+                f"categoryCode: {category_code}\n"
+                f"enteredAt: {visit.zone_entered_at.isoformat()}\n"
+                f"exitedAt: {exited_at.isoformat()}\n"
+                f"{self.LOG_SEPARATOR}"
+            )
         except requests.RequestException as error:
-            print(f"ZoneInteraction failed ({zone}): {error}")
+            print(
+                "ZoneInteraction failed\n"
+                f"floorCode: {floor_code}\n"
+                f"categoryCode: {category_code}\n"
+                f"enteredAt: {visit.zone_entered_at.isoformat()}\n"
+                f"exitedAt: {exited_at.isoformat()}\n"
+                f"error: {error}\n"
+                f"{self.LOG_SEPARATOR}"
+            )
         finally:
             visit.current_zone = None
             visit.zone_entered_at = None
@@ -123,6 +148,7 @@ class SpatialInteractionTracker:
         if not self._inside(point, self._box(frame, AR_ZONE_RATIO)):
             visit.ar_entered_at = None
             visit.ar_lookup_attempted_at = None
+            visit.ar_waiting_logged = False
             return
         if visit.ar_entered_at is None:
             visit.ar_entered_at = now
@@ -137,11 +163,32 @@ class SpatialInteractionTracker:
         visit.ar_lookup_attempted_at = now
         try:
             ar_session_id = self.backend.get_latest_active_ar_session_id()
+        except requests.HTTPError as error:
+            if error.response is not None and error.response.status_code == 404:
+                if not visit.ar_waiting_logged:
+                    print(
+                        "ARSession 대기 중...\n"
+                        f"{self.LOG_SEPARATOR}"
+                    )
+                    visit.ar_waiting_logged = True
+                return
+            print(f"Active ARSession lookup failed: {error}")
+            return
+        except (requests.RequestException, KeyError, TypeError, ValueError) as error:
+            print(f"Active ARSession lookup failed: {error}")
+            return
+
+        try:
             self.backend.map_ar_session(ar_session_id, visit.customer_session_id)
             visit.ar_mapped = True
-            print(f"ARSession {ar_session_id} mapped to CustomerSession {visit.customer_session_id}")
-        except (requests.RequestException, KeyError, TypeError, ValueError) as error:
-            print(f"Active ARSession lookup or mapping failed: {error}")
+            print(
+                "ARSession mapped\n"
+                f"arSessionId: {ar_session_id}\n"
+                f"customerSessionId: {visit.customer_session_id}\n"
+                f"{self.LOG_SEPARATOR}"
+            )
+        except requests.RequestException as error:
+            print(f"ARSession mapping failed: {error}")
 
     @staticmethod
     def _find_person_ground_point(frame: np.ndarray, result) -> tuple[int, int] | None:

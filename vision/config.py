@@ -1,7 +1,7 @@
 import os
 
 
-CAMERA_INDEX = int(os.getenv("MCM_CAMERA_INDEX", "0"))
+CAMERA_INDEX = int(os.getenv("MCM_CAMERA_INDEX", "1"))
 BACKEND_BASE_URL = os.getenv("MCM_BACKEND_URL", "https://api.mcm-showcase.com")
 MODEL_NAME = os.getenv("MCM_MODEL_NAME", "yolo26n-pose.pt")
 PERSON_CONFIDENCE = 0.60
